@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-
+DOTFILES="$HOME/dotfiles"
 OS="$(uname -s)"
 
+echo "=================================="
+echo " Dotfiles installer"
+echo "=================================="
+echo
 echo "Detected OS: $OS"
+echo
+
+read -p "Continue with installation? (y/N) " answer
+
+if [[ "$answer" != "y" ]]; then
+    echo "Cancelled."
+    exit 0
+fi
 
 
 # -------------------------
-# Packages
+# Package installation
 # -------------------------
 
 install_linux_packages() {
-
-    echo "Updating package lists..."
+    echo "Installing Linux packages..."
 
     sudo apt update
-
-    echo "Installing packages..."
 
     sudo apt install -y \
         git \
@@ -39,16 +48,14 @@ install_linux_packages() {
 install_macos_packages() {
 
     if ! command -v brew >/dev/null 2>&1; then
-
         echo "Installing Homebrew..."
 
         /bin/bash -c \
         "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
     fi
 
 
-    echo "Installing packages..."
+    echo "Installing macOS packages..."
 
     brew install \
         git \
@@ -57,97 +64,69 @@ install_macos_packages() {
         ripgrep \
         fd \
         fzf \
-        curl \
-        unzip \
         zoxide \
-        python \
         neovim
 }
 
 
 case "$OS" in
-
     Linux)
         install_linux_packages
         ;;
-
     Darwin)
         install_macos_packages
         ;;
-
     *)
-        echo "Unsupported OS: $OS"
+        echo "Unsupported operating system: $OS"
         exit 1
         ;;
-
 esac
 
 
 
 # -------------------------
-# Node.js / npm via nvm
+# nvm / Node
 # -------------------------
 
-export NVM_DIR="$HOME/.nvm"
+install_nvm() {
 
+    export NVM_DIR="$HOME/.nvm"
 
-if [ ! -d "$NVM_DIR" ]; then
+    if [ ! -d "$NVM_DIR" ]; then
 
-    echo "Installing nvm..."
+        echo "Installing nvm..."
 
-    curl -o- \
-    https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh \
-    | bash
+        curl -o- \
+        https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh \
+        | bash
 
-else
+    else
 
-    echo "nvm already installed"
-
-fi
-
-
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    source "$NVM_DIR/nvm.sh"
-fi
-
-
-if ! command -v node >/dev/null 2>&1; then
-
-    echo "Installing Node.js LTS..."
-
-    nvm install --lts
-    nvm alias default 'lts/*'
-
-else
-
-    echo "Node already installed: $(node --version)"
-
-fi
-
-
-
-# -------------------------
-# Neovim (Linux only)
-# -------------------------
-
-if [[ "$OS" == "Linux" ]]; then
-
-    if ! command -v nvim >/dev/null 2>&1; then
-
-        echo "Installing Neovim..."
-
-        curl -LO \
-        https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
-
-        chmod u+x nvim-linux-x86_64.appimage
-
-        sudo mv \
-            nvim-linux-x86_64.appimage \
-            /usr/local/bin/nvim
+        echo "nvm already installed"
 
     fi
 
-fi
+
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        source "$NVM_DIR/nvm.sh"
+    fi
+
+
+    if ! command -v node >/dev/null 2>&1; then
+
+        echo "Installing Node LTS..."
+
+        nvm install --lts
+        nvm alias default 'lts/*'
+
+    else
+
+        echo "Node already installed: $(node --version)"
+
+    fi
+}
+
+install_nvm
 
 
 
@@ -155,13 +134,22 @@ fi
 # uv
 # -------------------------
 
-if ! command -v uv >/dev/null 2>&1; then
+install_uv() {
 
-    echo "Installing uv..."
+    if ! command -v uv >/dev/null 2>&1; then
 
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "Installing uv..."
 
-fi
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    else
+
+        echo "uv already installed"
+
+    fi
+}
+
+install_uv
 
 
 
@@ -169,44 +157,127 @@ fi
 # TPM
 # -------------------------
 
-if [ ! -f "$HOME/.tmux/plugins/tpm/tpm" ]; then
+install_tpm() {
 
-    echo "Installing TPM..."
+    TPM="$HOME/.tmux/plugins/tpm"
 
-    mkdir -p "$HOME/.tmux/plugins"
+    if [ ! -d "$TPM" ]; then
 
-    git clone \
-        https://github.com/tmux-plugins/tpm \
-        "$HOME/.tmux/plugins/tpm"
+        echo "Installing TPM..."
 
-fi
+        mkdir -p "$HOME/.tmux/plugins"
+
+        git clone \
+            https://github.com/tmux-plugins/tpm \
+            "$TPM"
+
+    else
+
+        echo "TPM already installed"
+
+    fi
+}
+
+install_tpm
 
 
 
 # -------------------------
-# Dotfiles
+# Dotfile handling
 # -------------------------
 
-echo "Setting up dotfiles..."
+backup_if_exists() {
 
-cd "$HOME/dotfiles"
+    target="$1"
+
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+
+        backup="${target}.backup.$(date +%Y%m%d%H%M%S)"
+
+        echo "Backing up:"
+        echo "  $target"
+        echo "-> $backup"
+
+        mv "$target" "$backup"
+
+    fi
+}
 
 
-if [[ "$OS" == "Linux" ]]; then
-    stow bash
+stow_package() {
+
+    package="$1"
+
+    echo
+    echo "Setting up $package..."
+
+    cd "$DOTFILES"
+
+    # Handle common stow targets
+
+    case "$package" in
+
+        zsh)
+            backup_if_exists "$HOME/.zshrc"
+            ;;
+
+        bash)
+            backup_if_exists "$HOME/.bashrc"
+            ;;
+
+        tmux)
+            backup_if_exists "$HOME/.tmux.conf"
+            ;;
+
+        nvim)
+            backup_if_exists "$HOME/.config/nvim"
+            ;;
+
+    esac
+
+
+    stow "$package"
+}
+
+
+
+# -------------------------
+# Choose shell config
+# -------------------------
+
+SHELL_NAME="$(basename "${SHELL:-bash}")"
+
+echo
+echo "Detected shell: $SHELL_NAME"
+
+
+if [[ "$SHELL_NAME" == "zsh" ]]; then
+    stow_package zsh
+else
+    stow_package bash
 fi
 
 
-if [[ "$OS" == "Darwin" ]]; then
-    stow zsh
-fi
+stow_package tmux
+stow_package nvim
 
 
-stow tmux
-stow nvim
 
+# -------------------------
+# Finish
+# -------------------------
 
-echo "Done!"
+echo
+echo "=================================="
+echo " Installation complete!"
+echo "=================================="
+echo
 
-echo "Node version: $(node --version)"
-echo "npm version: $(npm --version)"
+echo "Versions:"
+echo "Node: $(node --version 2>/dev/null || echo missing)"
+echo "npm:  $(npm --version 2>/dev/null || echo missing)"
+echo "nvim: $(nvim --version | head -1 2>/dev/null || echo missing)"
+echo "tmux: $(tmux -V 2>/dev/null || echo missing)"
+
+echo
+echo "Restart your terminal to load shell changes."
