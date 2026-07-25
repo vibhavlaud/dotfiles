@@ -14,7 +14,7 @@ sudo apt install -y \
     fzf \
     curl \
     unzip \
-    autojump \
+    zoxide \
     build-essential \
     python3 \
     python3-pip \
