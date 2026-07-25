@@ -1,24 +1,87 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Updating package lists..."
-sudo apt update
 
-echo "Installing packages..."
-sudo apt install -y \
-    git \
-    stow \
-    tmux \
-    ripgrep \
-    fd-find \
-    fzf \
-    curl \
-    unzip \
-    zoxide \
-    build-essential \
-    python3 \
-    python3-pip \
-    python3-venv
+OS="$(uname -s)"
+
+echo "Detected OS: $OS"
+
+
+# -------------------------
+# Packages
+# -------------------------
+
+install_linux_packages() {
+
+    echo "Updating package lists..."
+
+    sudo apt update
+
+    echo "Installing packages..."
+
+    sudo apt install -y \
+        git \
+        stow \
+        tmux \
+        ripgrep \
+        fd-find \
+        fzf \
+        curl \
+        unzip \
+        zoxide \
+        build-essential \
+        python3 \
+        python3-pip \
+        python3-venv
+}
+
+
+install_macos_packages() {
+
+    if ! command -v brew >/dev/null 2>&1; then
+
+        echo "Installing Homebrew..."
+
+        /bin/bash -c \
+        "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    fi
+
+
+    echo "Installing packages..."
+
+    brew install \
+        git \
+        stow \
+        tmux \
+        ripgrep \
+        fd \
+        fzf \
+        curl \
+        unzip \
+        zoxide \
+        python \
+        neovim
+}
+
+
+case "$OS" in
+
+    Linux)
+        install_linux_packages
+        ;;
+
+    Darwin)
+        install_macos_packages
+        ;;
+
+    *)
+        echo "Unsupported OS: $OS"
+        exit 1
+        ;;
+
+esac
+
 
 
 # -------------------------
@@ -27,71 +90,98 @@ sudo apt install -y \
 
 export NVM_DIR="$HOME/.nvm"
 
+
 if [ ! -d "$NVM_DIR" ]; then
+
     echo "Installing nvm..."
 
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+    curl -o- \
+    https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh \
+    | bash
+
 else
+
     echo "nvm already installed"
+
 fi
 
-# Load nvm into this script
+
 if [ -s "$NVM_DIR/nvm.sh" ]; then
     source "$NVM_DIR/nvm.sh"
 fi
 
+
 if ! command -v node >/dev/null 2>&1; then
+
     echo "Installing Node.js LTS..."
 
     nvm install --lts
     nvm alias default 'lts/*'
+
 else
-    echo "Node.js already installed: $(node --version)"
+
+    echo "Node already installed: $(node --version)"
+
 fi
 
 
+
 # -------------------------
-# Neovim
+# Neovim (Linux only)
 # -------------------------
 
-if ! command -v nvim >/dev/null 2>&1; then
-    echo "Installing Neovim..."
+if [[ "$OS" == "Linux" ]]; then
 
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+    if ! command -v nvim >/dev/null 2>&1; then
 
-    chmod u+x nvim-linux-x86_64.appimage
+        echo "Installing Neovim..."
 
-    sudo mv nvim-linux-x86_64.appimage /usr/local/bin/nvim
-else
-    echo "Neovim already installed"
+        curl -LO \
+        https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+
+        chmod u+x nvim-linux-x86_64.appimage
+
+        sudo mv \
+            nvim-linux-x86_64.appimage \
+            /usr/local/bin/nvim
+
+    fi
+
 fi
 
 
+
 # -------------------------
-# uv (Python package manager)
+# uv
 # -------------------------
 
 if ! command -v uv >/dev/null 2>&1; then
+
     echo "Installing uv..."
+
     curl -LsSf https://astral.sh/uv/install.sh | sh
-else
-    echo "uv already installed"
+
 fi
 
+
+
 # -------------------------
-# TPM (Tmux Plugin Manager)
+# TPM
 # -------------------------
 
 if [ ! -f "$HOME/.tmux/plugins/tpm/tpm" ]; then
+
     echo "Installing TPM..."
 
     mkdir -p "$HOME/.tmux/plugins"
 
-    git clone https://github.com/tmux-plugins/tpm \
+    git clone \
+        https://github.com/tmux-plugins/tpm \
         "$HOME/.tmux/plugins/tpm"
-else
-    echo "TPM already installed"
+
 fi
+
+
 
 # -------------------------
 # Dotfiles
@@ -101,10 +191,22 @@ echo "Setting up dotfiles..."
 
 cd "$HOME/dotfiles"
 
-stow bash
+
+if [[ "$OS" == "Linux" ]]; then
+    stow bash
+fi
+
+
+if [[ "$OS" == "Darwin" ]]; then
+    stow zsh
+fi
+
+
 stow tmux
 stow nvim
 
+
 echo "Done!"
+
 echo "Node version: $(node --version)"
 echo "npm version: $(npm --version)"

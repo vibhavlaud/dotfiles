@@ -117,14 +117,23 @@ if ! shopt -oq posix; then
 fi
 
 
-# Start ssh-agent only if one is not already running
+# -------------------------
+# ssh-agent
+# -------------------------
+
 if [ -z "$SSH_AUTH_SOCK" ]; then
     eval "$(ssh-agent -s)" >/dev/null
 fi
 
-# Add SSH key if it exists
-if [ -f "$HOME/.ssh/vlaud_ssh_key" ]; then
-    ssh-add -q "$HOME/.ssh/vlaud_ssh_key" 2>/dev/null
+# Add first SSH private key found
+SSH_KEY=$(find "$HOME/.ssh" -maxdepth 1 -type f \
+    ! -name "config" \
+    ! -name "known_hosts" \
+    ! -name "*.pub" \
+    | head -n 1)
+
+if [ -n "$SSH_KEY" ]; then
+    ssh-add -q "$SSH_KEY" 2>/dev/null
 fi
 
 
@@ -143,6 +152,7 @@ fi
 # -------------------------
 
 eval "$(zoxide init bash)"
+
 
 # -------------------------
 # uv
@@ -172,5 +182,4 @@ fi
 # Bash behavior
 # -------------------------
 
-# Use Vim keybindings
 set -o vi
