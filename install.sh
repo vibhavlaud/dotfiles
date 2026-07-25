@@ -14,11 +14,41 @@ sudo apt install -y \
     fzf \
     curl \
     unzip \
-    xclip \
+    autojump \
     build-essential \
     python3 \
     python3-pip \
     python3-venv
+
+
+# -------------------------
+# Node.js / npm via nvm
+# -------------------------
+
+export NVM_DIR="$HOME/.nvm"
+
+if [ ! -d "$NVM_DIR" ]; then
+    echo "Installing nvm..."
+
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+else
+    echo "nvm already installed"
+fi
+
+# Load nvm into this script
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    source "$NVM_DIR/nvm.sh"
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+    echo "Installing Node.js LTS..."
+
+    nvm install --lts
+    nvm alias default 'lts/*'
+else
+    echo "Node.js already installed: $(node --version)"
+fi
+
 
 # -------------------------
 # Neovim
@@ -48,6 +78,20 @@ else
     echo "uv already installed"
 fi
 
+# -------------------------
+# TPM (Tmux Plugin Manager)
+# -------------------------
+
+if [ ! -f "$HOME/.tmux/plugins/tpm/tpm" ]; then
+    echo "Installing TPM..."
+
+    mkdir -p "$HOME/.tmux/plugins"
+
+    git clone https://github.com/tmux-plugins/tpm \
+        "$HOME/.tmux/plugins/tpm"
+else
+    echo "TPM already installed"
+fi
 
 # -------------------------
 # Dotfiles
@@ -62,3 +106,5 @@ stow tmux
 stow nvim
 
 echo "Done!"
+echo "Node version: $(node --version)"
+echo "npm version: $(npm --version)"

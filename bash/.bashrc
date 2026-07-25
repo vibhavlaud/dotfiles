@@ -142,7 +142,9 @@ fi
 # Autojump
 # -------------------------
 
-if [ -f "$HOME/.autojump/etc/profile.d/autojump.sh" ]; then
+if [ -f "/usr/share/autojump/autojump.sh" ]; then
+    source "/usr/share/autojump/autojump.sh"
+elif [ -f "$HOME/.autojump/etc/profile.d/autojump.sh" ]; then
     source "$HOME/.autojump/etc/profile.d/autojump.sh"
 fi
 
