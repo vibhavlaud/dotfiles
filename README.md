@@ -14,15 +14,20 @@ Most packages will install automatically, but a few terminal settings must be co
 
 Specifically, you should:
 
-Install and select a Nerd Font (for example, JetBrains Mono Nerd Font).
-Configure your terminal to use the Catppuccin Mocha color scheme (or another compatible theme).
-Ensure your terminal supports true color.
-Select the Nerd Font in your terminal profile.
+- Install and select a Nerd Font (for example, JetBrains Mono Nerd Font).
+- Configure your terminal to use the Catppuccin Mocha color scheme (or another compatible theme).
+- Ensure your terminal supports true color.
+- Select the Nerd Font in your terminal profile.
 
 Without these settings, tmux and Neovim may still function correctly, but icons, colors, and the status bar may not render as intended.
+
 Run `<leader> I` (leader in this case is Ctrl-a, by default. This can be modified in dotfiles/tmux/.tmux.conf) so that TPM will install all plugins.
 
 # Features
+
+Most features are things you will discover as you explore using nvim and tmux. The one of note outside those 2 is zoxide. Zoxide is a cli tool that makes it very convenient to move between directories you frequent without having to cd a whole bunch. If you are an autojump user, zoxide allows you to import your autojump history. zi `Enter` will open up an interactive fuzzy find floating window to cd into whichever directory you'd like.
+
+# Installation
 
 The installer will:
 
@@ -38,8 +43,6 @@ The installer will:
 - Back up existing configuration files before replacing them
 
 The installer is designed to be non-destructive. Existing configuration files are backed up rather than overwritten.
-
-# Installation
 
 ## Clone the repository:
 
