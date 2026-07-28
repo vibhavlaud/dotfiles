@@ -96,7 +96,7 @@ return {
             {
                 "<leader>gd",
                 "<cmd>DiffviewOpen<CR>",
-                desc = "Open Diffview",
+                desc = "Diffview local changes",
             },
 
             {
@@ -114,7 +114,13 @@ return {
             {
                 "<leader>gt",
                 "<cmd>DiffviewToggleFiles<CR>",
-                desc = "Open Diffview",
+                desc = "Toggle Diffview",
+            },
+
+            {
+                "<leader>gdd",
+                "<cmd>DiffviewOpen dev...HEAD<CR>",
+                desc = "Diffview dev",
             },
         },
 
